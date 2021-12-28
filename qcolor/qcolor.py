@@ -25,13 +25,15 @@ class QColorTheory():
 
     def rgb_to_qcd(self, r, g, b, return_tuple=False):
         hls = rgb_to_hls(r, g, b)
-        chroma = max(r, g, b) - min(r, g, b)
+        # chroma = max(r, g, b) - min(r, g, b)
         h, l, s = hls
-        if chroma <= self.gray_threshold:
+        if s <= self.gray_threshold:
             scale = self.qcdlab1
+            value = l
         else:
             scale = self.qcdlab2
-        label = which(h, scale["intervals"], scale["names"])
+            value = h
+        label = which(value, scale["intervals"], scale["names"])
         adj = None
         if label not in scale["invariable"]:
             adj_table = scale["adj_table"]
@@ -51,7 +53,7 @@ default_qcd = QColorTheory({
                           [.6, .8, 0, 1.01]],
             "names": ("dark", "light", None)
         },
-        "invariable": frozenset("black", "white")
+        "invariable": frozenset(["black", "white"])
     },
     "qcdlab2": {
         "intervals": np.array([0, 20/360.0, 50/360.0, 

@@ -1,8 +1,6 @@
 import unittest
 import qcolor
 
-print("dir(qcolor)", dir(qcolor))
-
 color_table = {
     (0.2, 0.2, 0.2): "dark_grey",
     (0.5, 0.25, 0.9): "purple"
