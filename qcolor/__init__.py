@@ -1,1 +1,0 @@
-from .qcolor import get_qcd
