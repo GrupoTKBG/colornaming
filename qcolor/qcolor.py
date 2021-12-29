@@ -23,28 +23,32 @@ class QColorTheory():
         self.qcdlab1 = spec["qcdlab1"]
         self.qcdlab2 = spec["qcdlab2"]
 
-    def rgb_to_qcd(self, r, g, b, return_tuple=False):
+    def rgb_to_hlc(self, r, g, b):
         hls = rgb_to_hls(r, g, b)
-        # chroma = max(r, g, b) - min(r, g, b)
-        h, l, s = hls
-        if s <= self.gray_threshold:
+        chroma = max(r, g, b) - min(r, g, b)
+        return (hls[0], hls[1], chroma)
+
+    def rgb_to_qcd(self, r, g, b, return_tuple=False):
+        h, l, c = self.rgb_to_hlc(r, g, b)
+        if c < self.gray_threshold:
             scale = self.qcdlab1
-            value = l
+            value = round(l, 6)
         else:
             scale = self.qcdlab2
-            value = h
+            value = round(h, 6)
         label = which(value, scale["intervals"], scale["names"])
         adj = None
         if label not in scale["invariable"]:
             adj_table = scale["adj_table"]
             for i, intervals in enumerate(adj_table["intervals"]):
-                l0, l1, s0, s1 = intervals
-                if l0 <= l < l1 and s0 <= s < s1:
+                l0, l1, c0, c1 = intervals
+                if l0 <= l < l1 and c0 <= c < c1:
                     adj = adj_table["names"][i]
                     break
         return make_label(adj, label, return_tuple=return_tuple)
 
 default_qcd = QColorTheory({
+    "gray_threshold": .2,
     "qcdlab1": {
         "intervals": np.array([0, .20, .80, 1.01]),
         "names": ("black", "grey", "white"),
@@ -56,19 +60,16 @@ default_qcd = QColorTheory({
         "invariable": frozenset(["black", "white"])
     },
     "qcdlab2": {
-        "intervals": np.array([0, 20/360.0, 50/360.0, 
-                      80/360.0, 160/360.0, 200/360.0, 260/360.0, 
-                      297/360.0, 335/360.0, 360/360.0]),
+        "intervals": np.array([0, 20, 50, 80, 160, 200, 260, 297, 335, 360])/360.0,
         "names": ("red", "orange", "yellow", "green", "turquoise", "blue", "purple", "pink", "red"),
         "adj_table": {
             "intervals": [[0, .40, 0, 1.01],
-                          [.60, 1.00, 0, 1.01],
+                          [.60, 1.01, 0, 1.01],
                           [.40, .60, 0, .50]],
-            "names": ("dark", "light", "pale", None)
+            "names": ("dark", "light", "pale")
         },
         "invariable": frozenset()
-    },
-    "gray_threshold": .2
+    }
 })
 
 qcd_theories = {
