@@ -1,7 +1,7 @@
 import unittest
 import colornaming
-from .base_colors import base_colors
-from .rgb_hlc import rgb_to_hlc
+from base_colors import base_colors
+from prl15_colors import prl15_colors
 
 def label_to_tuple(label):
     s = label.split("_")
@@ -9,16 +9,9 @@ def label_to_tuple(label):
         return (s[0], s[1], label)
     return (None, label, label)
 
+# base_colors = {    (0.200000, 0.200000, 1.000000): "blue" }
 class TestQCD(unittest.TestCase):
-
-    def test_rgb_to_hlc(self):
-        qcd = colornaming.get_model("qcd")
-        for rgb, hlc in rgb_to_hlc.items():
-            r, g, b = rgb
-            my_hlc = qcd.rgb_to_hlc(r, g, b)
-            my_hlc = tuple(map(lambda x: round(x, 6), my_hlc))
-            self.assertEqual(my_hlc, hlc)
-
+        
     def test_rgb_to_qcd(self):
         qcd = colornaming.get_model("qcd")
         for rgb, qcol in base_colors.items():
@@ -35,7 +28,7 @@ class TestQCD(unittest.TestCase):
 
     def test_rgb_to_qcd_prl15(self):
         qcd = colornaming.get_model("qcd:prl15")
-        for rgb, qcol in base_colors.items():
+        for rgb, qcol in prl15_colors.items():
             r, g, b = rgb
             label = qcd.from_rgb(r, g, b)
             self.assertEqual(label, qcol, msg=rgb)

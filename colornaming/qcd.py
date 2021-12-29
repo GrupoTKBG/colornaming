@@ -1,6 +1,6 @@
 from math import inf
 from .colornaming import ColorNamingModel, register_model
-from colorsys import rgb_to_hls
+from .hlc import rgb_to_hlc360
 import numpy as np 
 
 ADJ_LABEL_SEP = "_"
@@ -24,19 +24,14 @@ class QColorTheory(ColorNamingModel):
         self.qcdlab1 = spec["qcdlab1"]
         self.qcdlab2 = spec["qcdlab2"]
 
-    def rgb_to_hlc(self, r, g, b):
-        hls = rgb_to_hls(r, g, b)
-        chroma = max(r, g, b) - min(r, g, b)
-        return (hls[0], hls[1], chroma)
-
     def from_rgb(self, r, g, b, return_tuple=False):
-        h, l, c = self.rgb_to_hlc(r, g, b)
+        h, l, c = rgb_to_hlc360(r, g, b)
         if c < self.gray_threshold:
             scale = self.qcdlab1
-            value = round(l, 6)
+            value = l
         else:
             scale = self.qcdlab2
-            value = round(h, 6)
+            value = h
         label = which(value, scale["intervals"], scale["names"])
         adj = None
         if label not in scale["invariable"]:
@@ -61,7 +56,7 @@ qcd_default = QColorTheory({
         "invariable": frozenset(["black", "white"])
     },
     "qcdlab2": {
-        "intervals": np.array([0, 20, 50, 80, 160, 200, 260, 297, 335, 360.1])/360.0,
+        "intervals": np.array([0, 20, 50, 80, 160, 200, 260, 297, 335, 360.1]),
         "names": ("red", "orange", "yellow", "green", "turquoise", "blue", "purple", "pink", "red"),
         "adj_table": {
             "intervals": [[0, .40, 0, 1.01],
@@ -85,11 +80,11 @@ qcd_prl15 = QColorTheory({
         "invariable": frozenset(["black", "white"])
     },
     "qcdlab2": {
-        "intervals": np.array([0, 10, 42.5, 66.5, 151.5, 193.5, 256.5, 305.5, 345.5, 360.1])/360.0,
+        "intervals": np.array([0, 10, 42.5, 66.5, 151.5, 193.5, 256.5, 305.5, 345.5, 360.1]),
         "names": ("red", "orange", "yellow", "green", "turquoise", "blue", "purple", "pink", "red"),
         "adj_table": {
             "intervals": [[0, .455, 0, 1.01],
-                          [.455, 1.01, 0, 53.5]],
+                          [.455, 1.01, 0, .535]],
             "names": ("dark", "palelight")
         },
         "invariable": frozenset()
