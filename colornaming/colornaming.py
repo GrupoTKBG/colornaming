@@ -5,6 +5,9 @@ class ColorNamingModel(ABC):
     def from_rgb(self, r, g, b):
         pass
 
+    def to_rgb(self, label):
+        raise NotImplementedError()        
+
 known_models = {}
 
 def get_model(name):
