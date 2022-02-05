@@ -1,5 +1,6 @@
-from xml.dom import NoModificationAllowedErr
+from itertools import combinations
 import numpy as np
+from .mood import MoodModel
 
 class QImage():
     def __init__(self, arr, model, mode=None):
@@ -72,9 +73,30 @@ class QImage():
             self._histogram = dict(zip(unique, counts))
         return self._histogram.copy()
     
-    def top_colors(self, n):
+    def top_colors(self, n=None):
         h = self.histogram()
         if '#transparent' in h:
             del h['#transparent']
         s = sorted(h.keys(), key=h.get, reverse=True)
-        return s[:n]
+        total = sum(h.values()) - h.get("#transparent", 0)
+        return [(k, h[k]/total) for k in s[:n]]
+    
+    def top_moods(self, n=None):
+        if not isinstance(self.model, MoodModel):
+            return []
+        h = self.histogram()
+        total = sum(h.values()) - h.get("#transparent", 0)
+        moods = {}
+        for c in combinations(h.keys(), self.model.get_mood_palette_size()):
+            mood = self.model.get_mood(c)
+            if mood is None:
+                continue
+            weight = sum(h[col] for col in c)/total
+            if mood in moods:
+                moods[mood] += weight
+            else:
+                moods[mood] = weight
+        s = sorted(moods, key=moods.get, reverse=True)
+        return [(m, moods[m]) for m in s[:n]]
+
+        

@@ -91,8 +91,8 @@ qcd_prl15 = QColorTheory({
     }
 })
 
-register_model("qcd", qcd_default)
-register_model("qcd:base", qcd_default)
-register_model("qcd:prl15", qcd_prl15)
+register_model("qcd", lambda: qcd_default)
+register_model("qcd:base", lambda: qcd_default)
+register_model("qcd:prl15", lambda: qcd_prl15)
 
 

@@ -1,13 +1,16 @@
 import os 
 import math
 import numpy as np 
-from .colornaming import ColorNamingModel, register_model
+from ..colornaming import ColorNamingModel, register_model
+from ..mood import MoodModel
+from .moods import KobayashiMoods
 
 kobayashi_colors = {}
 
 def ensure_koba_data():
     if kobayashi_colors != {}:
         return
+
     with open(os.path.join(os.path.dirname(__file__), "data/datos colores kobayashi.csv")) as f:
         next(f) # Skip header
         for l in f:
@@ -20,9 +23,10 @@ def ensure_koba_data():
 def distance(r0, b0, g0, r1, b1, g1):
     return math.sqrt((r1-r0)*(r1-r0) + (b1-b0)*(b1-b0) + (g1-g0)*(g1-g0))
 
-class KobayashiModel(ColorNamingModel):
-    def __init__(self):
+class KobayashiModel(ColorNamingModel, MoodModel):
+    def __init__(self, mood_model=None):
         ensure_koba_data()
+        self.mood = KobayashiMoods(mood_model)
 
     def from_rgb(self, r, g, b, return_tuple=False):
         # Get nearest RGB
@@ -38,4 +42,10 @@ class KobayashiModel(ColorNamingModel):
         rgb = kobayashi_colors[label]["rgb"]
         return rgb[0], rgb[1], rgb[2]
 
-register_model("kobayashi", KobayashiModel())
+    def get_mood(self, colors):
+        return self.mood.get_mood(colors)
+
+    def get_mood_palette_size(self):
+        return 3
+
+register_model("kobayashi", KobayashiModel)

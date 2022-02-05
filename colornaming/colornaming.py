@@ -6,12 +6,12 @@ class ColorNamingModel(ABC):
         pass
 
     def to_rgb(self, label):
-        raise NotImplementedError()        
+        raise NotImplementedError()     
 
 known_models = {}
 
-def get_model(name):
-    return known_models[name]
+def get_model(name, *args, **kwargs):
+    return known_models[name](*args, **kwargs)
 
-def register_model(name, instance): 
-    known_models[name] = instance
+def register_model(name, cls): 
+    known_models[name] = cls
