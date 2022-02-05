@@ -3,11 +3,11 @@ import numpy as np
 from .mood import MoodModel
 
 class QImage():
-    def __init__(self, arr, model, mode=None):
+    def __init__(self, arr, model, mode=None, from_quantized=None):
         self.cache = {}
         self.arr = arr
         self.model = model
-        self._quantized = None
+        self._quantized = from_quantized
         self._histogram = None
         if mode is None:
             coords = arr.shape[2]
@@ -29,6 +29,10 @@ class QImage():
         if self.mode != '1':
             self.arr = arr.astype('float32') / 255.0
 
+    @property
+    def quantized(self):
+        return self.quantize()
+        
     def _convert_1(self, c):
         color = [255, 255, 255] if c == 1 else [0, 0, 0]
         return self._convert_rgb(color)
@@ -73,15 +77,15 @@ class QImage():
             self._histogram = dict(zip(unique, counts))
         return self._histogram.copy()
     
-    def top_colors(self, n=None):
+    def top_colors(self, n=None, min_weight=0.0):
         h = self.histogram()
         if '#transparent' in h:
             del h['#transparent']
         s = sorted(h.keys(), key=h.get, reverse=True)
         total = sum(h.values()) - h.get("#transparent", 0)
-        return [(k, h[k]/total) for k in s[:n]]
+        return [(k, h[k]/total) for k in s[:n] if h[k]/total >= min_weight]
     
-    def top_moods(self, n=None):
+    def top_moods(self, n=None, min_weight=0.0):
         if not isinstance(self.model, MoodModel):
             return []
         h = self.histogram()
@@ -97,6 +101,4 @@ class QImage():
             else:
                 moods[mood] = weight
         s = sorted(moods, key=moods.get, reverse=True)
-        return [(m, moods[m]) for m in s[:n]]
-
-        
+        return [(m, moods[m]) for m in s[:n] if moods[m]/total >= min_weight]
