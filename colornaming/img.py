@@ -101,4 +101,4 @@ class QImage():
             else:
                 moods[mood] = weight
         s = sorted(moods, key=moods.get, reverse=True)
-        return [(m, moods[m]) for m in s[:n] if moods[m]/total >= min_weight]
+        return [(m, moods[m]) for m in s[:n] if moods[m] >= min_weight]
