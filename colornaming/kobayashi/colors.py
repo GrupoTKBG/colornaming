@@ -16,6 +16,7 @@ def ensure_koba_data():
         for l in f:
             row = l.replace(",", ".").split(";")
             kobayashi_colors[row[0]] = {
+                "rgb255": (int(row[1]), int(row[2]), int(row[3])),
                 "rgb": (int(row[1])/255, int(row[2])/255, int(row[3])/255),
                 "hlc": (float(row[5]), float(row[6]), float(row[7]))
             }
@@ -45,7 +46,14 @@ class KobayashiModel(ColorNamingModel, MoodModel):
     def get_mood(self, colors):
         return self.mood.get_mood(colors)
 
+    def get_palettes(self, mood):
+        return self.mood.get_palettes(mood)
+
     def get_mood_palette_size(self):
         return 3
+
+    def get_color_names(self, attrib="rgb"):
+        return [(c, kobayashi_colors[c][attrib]) for c in kobayashi_colors]
+
 
 register_model("kobayashi", KobayashiModel)
