@@ -61,22 +61,21 @@ class QImage():
 
     def _convert_rgb(self, rgb):
         t = tuple(rgb)
-        if t in self.cache:
-            return self.cache[t]
-        ret = self.model.from_rgb(*t)
-        self.cache[t] = ret
-        return ret
+        if t not in self.cache:
+            ret = self.model.from_rgb(*t)
+            self.cache[t] = ret
+        return np.array(self.cache[t], dtype=object)
 
     def _convert_rgba(self, rgba):
         if rgba[3] == 0:
             return "#transparent"
         return self._convert_rgb(rgba[:3])
 
-    def _convert_function(self):
+    def _rgb_to_q_func(self):
         if self.mode == '1':
             return self._convert_1
         if self.mode == 'L':
-            return self._convert_1
+            return self._convert_l
         if self.mode == 'RGB':
             return self._convert_rgb
         if self.mode == 'RGBA':
@@ -84,7 +83,7 @@ class QImage():
 
     def quantize(self):
         if self._quantized is None:
-            arr = np.apply_along_axis(self._convert_function(), 2, self.arr) # type: ignore
+            arr = np.apply_along_axis(self._rgb_to_q_func(), 2, self.arr) # type: ignore
             shape = tuple(list(self.arr.shape[:2]) + [1])
             self._quantized = np.reshape(arr, shape)
         return self._quantized
