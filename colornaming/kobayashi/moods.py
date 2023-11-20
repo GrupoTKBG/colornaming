@@ -1,5 +1,6 @@
 import os
 import warnings
+from typing import Dict, Optional
 
 kobayashi_moods = {}
 mood_palettes = {}
@@ -28,7 +29,7 @@ def ensure_mood_data():
 class KobayashiMoods:
     def __init__(self, mood_model):
         self.mood_model = mood_model
-        self.moods = None
+        self.moods: Optional[Dict] = None
 
     def ensure_moods(self):
         if self.moods is not None:
@@ -63,7 +64,7 @@ class KobayashiMoods:
         self.ensure_moods()
         if len(colors) != 3:
             raise ValueError("Expected a 3 color palette")
-        return self.moods.get(palette_signature(colors))
+        return self.moods.get(palette_signature(colors)) # type: ignore
     
     def get_palettes(self, mood):
         self.ensure_moods()

@@ -1,22 +1,41 @@
 from itertools import combinations
+from typing import Optional, Tuple
+import logging
 import numpy as np
+from PIL import Image
 from .mood import MoodModel
+from .colornaming import ColorNamingModel
+
+logger = logging.getLogger(__name__)
 
 class QImage():
-    def __init__(self, arr, model, mode=None, from_quantized=None):
+    def __init__(self, 
+                 src: str|np.ndarray, 
+                 model: ColorNamingModel,
+                 mode: Optional[str]=None, 
+                 max_size: Optional[Tuple[int,int]]=None, 
+                 from_quantized: Optional[np.ndarray]=None):
         self.cache = {}
-        self.arr = arr
+        if type(src) == str:
+            img = Image.open(src)
+            if max_size is not None:
+                img.thumbnail(max_size, Image.NEAREST)
+            self.arr = np.array(img)
+        elif type(src) == np.ndarray:
+            self.arr = src
+        else:
+            raise ValueError("Invalid image type")
         self.model = model
         self._quantized = from_quantized
         self._histogram = None
         if mode is None:
-            coords = arr.shape[2]
+            coords = self.arr.shape[2]
             if coords == 4:
                 self.mode = "RGBA"
             elif coords == 3:
                 self.mode = "RGB"
             elif coords == 1:
-                if np.max(arr) > 1:
+                if np.max(src) > 1:
                     self.mode = "L"
                 else:
                     self.mode = "1"
@@ -27,7 +46,7 @@ class QImage():
                 raise ValueError("Invalid mode")
             self.mode = mode
         if self.mode != '1':
-            self.arr = arr.astype('float32') / 255.0
+            self.arr = self.arr.astype('float32') / 255.0
 
     @property
     def quantized(self):
@@ -64,7 +83,7 @@ class QImage():
 
     def quantize(self):
         if self._quantized is None:
-            arr = np.apply_along_axis(self._rgb_to_q_func(), 2, self.arr)
+            arr = np.apply_along_axis(self._rgb_to_q_func(), 2, self.arr) # type: ignore
             shape = tuple(list(self.arr.shape[:2]) + [1])
             self._quantized = np.reshape(arr, shape)
         return self._quantized
@@ -80,17 +99,18 @@ class QImage():
         h = self.histogram()
         if '#transparent' in h:
             del h['#transparent']
-        s = sorted(h.keys(), key=h.get, reverse=True)
+        s = sorted(h.keys(), key=h.get, reverse=True) # type: ignore
         total = sum(h.values()) - h.get("#transparent", 0)
         return [(k, h[k]/total) for k in s[:n] if h[k]/total >= min_weight]
     
     def top_moods(self, n=None, min_weight=0.0):
         if not isinstance(self.model, MoodModel):
+            logger.warning("Model is not a MoodModel")
             return []
         h = self.histogram()
         total = sum(h.values()) - h.get("#transparent", 0)
         moods = {}
-        for c in combinations(h.keys(), self.model.get_mood_palette_size()):
+        for c in combinations(h.keys(), self.model.get_mood_palette_size()): # type: ignore
             mood = self.model.get_mood(c)
             if mood is None:
                 continue
@@ -99,5 +119,5 @@ class QImage():
                 moods[mood] += weight
             else:
                 moods[mood] = weight
-        s = sorted(moods, key=moods.get, reverse=True)
+        s = sorted(moods, key=moods.get, reverse=True) # type: ignore
         return [(m, moods[m]) for m in s[:n] if moods[m] >= min_weight]
