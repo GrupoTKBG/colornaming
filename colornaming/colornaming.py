@@ -40,5 +40,5 @@ def get_model(name, *args, **kwargs):
 def register_model(name, cls): 
     known_models[name] = cls
 
-def c():
+def list_known_models():
     return known_models.keys()
