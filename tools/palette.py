@@ -1,7 +1,5 @@
 import sys
 import argparse
-import numpy as np
-from PIL import Image
 from joblib import Memory, Parallel, delayed
 from colornaming import list_known_models, get_model
 from colornaming.img import QImage
@@ -30,8 +28,7 @@ def get_moods(qimg, fname, model, num_moods):
     return qimg.top_moods(num_moods)
 
 def process_image(f, args, model):
-    img = Image.open(f)
-    qimg = QImage(np.array(img), model=model, max_size=args.max_size)
+    qimg = QImage(f, model=model, max_size=args.max_size)
     top_colors= get_top_colors(qimg, f, args.model, args.num_colors)
     res = f + f"|{','.join([f'{c[0]}:{c[1]}' for c in top_colors])}"
     
@@ -42,11 +39,10 @@ def process_image(f, args, model):
 if args.cache:
     mem = Memory(args.cache, verbose=0)
     get_top_colors = mem.cache(get_top_colors, ignore=['qimg'])
-    get_moods = mem.cache(get_top_colors, ignore=['qimg'])
+    get_moods = mem.cache(get_moods, ignore=['qimg'])
 
 model = get_model(args.model)
 outfile = sys.stdout if args.outfile is None else open(args.outfile, "wt", encoding='utf-8')
-print(outfile)
 with outfile:
     if args.jobs == 1:
         for f in args.images:
