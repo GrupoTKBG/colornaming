@@ -29,6 +29,7 @@ class KobayashiModel(ColorNamingModel, MoodModel):
         return labels[np.argmin(distances)]
 
     def to_rgb(self, label):
+        self._ensure_koba_data()
         rgb = self.kobayashi_colors[label]["rgb"]
         return rgb[0], rgb[1], rgb[2]
 
