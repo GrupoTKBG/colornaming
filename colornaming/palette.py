@@ -29,7 +29,6 @@ class Palette():
         self.model = model
         self.scoring_model = None
 
-    
     def plot(self):
         # Plot palette
         rgb = np.array(self.model.to_rgb(c) for c in self.colors)
