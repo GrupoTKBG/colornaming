@@ -3,6 +3,7 @@ import argparse
 from joblib import Memory, Parallel, delayed
 from colornaming import list_known_models, get_model
 from colornaming.img import QImage
+from colornaming.palette import Palette
 
 parser = argparse.ArgumentParser(
                     prog='qpalette',
@@ -16,6 +17,7 @@ parser.add_argument("-s", "--max_size", nargs=2, required=False, default=[244, 2
 parser.add_argument("-j", "--jobs", required=False, type=int, default=1, help="Number of joblib parallel jobs")
 parser.add_argument("-c", "--cache", required=False, default=None, help="Use this directory as joblib cache")
 parser.add_argument("-o", "--outfile", required=False, default=None, help="Output file")
+parser.add_argument("--score", required=False, default=False, action='store_true', help="Score the palette")
 
 args = parser.parse_args()
 args.max_size = tuple(args.max_size)
@@ -34,12 +36,15 @@ def process_image(f, args, model):
     
     if args.moods > 0:
         res += "|" + ','.join([f"{m[0]}:{m[1]}" for m in get_moods(qimg, f, args.model, args.moods)])
+    if args.score is not None:
+        pal = Palette([c[0] for c in top_colors], model)
+        res += f"|{pal.score_palette():.3f}"
     return res
 
 if args.cache:
     mem = Memory(args.cache, verbose=0)
-    get_top_colors = mem.cache(get_top_colors, ignore=['qimg'])
-    get_moods = mem.cache(get_moods, ignore=['qimg'])
+    get_top_colors = mem.cache(get_top_colors, ignore=['qimg']) # type: ignore
+    get_moods = mem.cache(get_moods, ignore=['qimg']) # type: ignore
 
 model = get_model(args.model)
 outfile = sys.stdout if args.outfile is None else open(args.outfile, "wt", encoding='utf-8')
@@ -50,3 +55,4 @@ with outfile:
     else:
         for res in Parallel(n_jobs=args.jobs, return_as="generator", batch_size=1, verbose=10)(delayed(process_image)(f, args, model) for f in args.images):
             print(res, file=outfile)
+

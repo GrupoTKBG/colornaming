@@ -1,25 +1,27 @@
 import os
 import zipfile
-from typing import List
+import sys
+from typing import List, Optional
 from itertools import combinations_with_replacement
 import matplotlib.pyplot as plt
 import numpy as np
 from xgboost import XGBRegressor
 from .colornaming import ColorNamingModel
 
-
-palette_model = None
+palette_model : Optional[XGBRegressor] = None
 
 def load_palette_model():
     global palette_model
     if palette_model is None:
         palette_model = XGBRegressor()
 
-        if not os.path.exists("models/xgb_pal5_full.json"):
-            if os.path.exists("models/xgb_pal5_full.zip"):
-                with zipfile.ZipFile("models/xgb_pal5_full.zip", 'r') as zip_ref:
-                    zip_ref.extractall("models/")
-        palette_model.load_model("models/xgb_pal5_full.json")
+        model_dir = os.path.join(os.path.dirname(__file__), "models")
+        if not os.path.exists(f"{model_dir}/xgb_pal5_full.json"):
+            if os.path.exists(f"{model_dir}/xgb_pal5_full.json.zip"):
+                with zipfile.ZipFile(f"{model_dir}/xgb_pal5_full.json.zip", 'r') as zip_ref:
+                    zip_ref.extractall(model_dir)
+        palette_model.load_model(f"{model_dir}/xgb_pal5_full.json")
+
 
 class Palette():
     def __init__(self, colors: List[str], model: ColorNamingModel) -> None:
@@ -37,9 +39,10 @@ class Palette():
         plt.show()
 
     def _score_pal(self, koba_colors):
+        global palette_model
         rgb = list(map(self.model.to_rgb, koba_colors))
         feat = np.array(rgb).flatten()
-        return palette_model.predict([feat])[0]
+        return palette_model.predict([feat])[0] # type: ignore
         
     def score_palette(self, agg=np.mean):
         load_palette_model()
