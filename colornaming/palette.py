@@ -22,6 +22,11 @@ def load_palette_model():
                     zip_ref.extractall(model_dir)
         palette_model.load_model(f"{model_dir}/xgb_pal5_full.json")
 
+def score_rbg(colors):
+    load_palette_model()
+    feat = np.array(colors).flatten()
+    return palette_model.predict([feat])[0] # type: ignore
+
 
 class Palette():
     def __init__(self, colors: List[str], model: ColorNamingModel) -> None:
@@ -38,10 +43,8 @@ class Palette():
         plt.show()
 
     def _score_pal(self, koba_colors):
-        global palette_model
         rgb = list(map(self.model.to_rgb, koba_colors))
-        feat = np.array(rgb).flatten()
-        return palette_model.predict([feat])[0] # type: ignore
+        return score_rbg(rgb)
         
     def score_palette(self, agg=np.mean):
         load_palette_model()
@@ -49,3 +52,4 @@ class Palette():
         pals = [comb for comb in combinations_with_replacement(self.colors, 5) if list(dict.fromkeys(comb)) == self.colors]  
         # print(pals)
         return agg(list(map(self._score_pal, pals))) 
+    
