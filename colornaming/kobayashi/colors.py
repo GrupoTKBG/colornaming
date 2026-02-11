@@ -12,11 +12,11 @@ class KobayashiModel(ColorNamingModel, MoodModel):
     kobayashi_colors = {}
 
     def __init__(self, mood_model=None):
-        self._ensure_koba_data()
+        KobayashiModel._ensure_koba_data()
         self.mood = KobayashiMoods(mood_model)
 
     def from_rgb(self, r, g, b, return_tuple=False):
-        self._ensure_koba_data()
+        #self._ensure_koba_data()
 
         # Get nearest RGB
         kobayashi_colors = KobayashiModel.kobayashi_colors
@@ -29,8 +29,8 @@ class KobayashiModel(ColorNamingModel, MoodModel):
         return labels[np.argmin(distances)]
 
     def to_rgb(self, label):
-        self._ensure_koba_data()
-        rgb = self.kobayashi_colors[label]["rgb"]
+        # self._ensure_koba_data()
+        rgb = KobayashiModel.kobayashi_colors[label]["rgb"]
         return rgb[0], rgb[1], rgb[2]
 
     def get_mood(self, colors):

@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('images', nargs='+', help='images to analyze')
 parser.add_argument("-m", "--model", choices=list_known_models(), default="qcd", help="model to use")    
+parser.add_argument("--method", choices=["colorthief", "qualitative"], default="colorthief", help="method to use for palette extraction")
 parser.add_argument("--moods", type=int, default=0, help="get N kobayashi moods")    
 parser.add_argument("-n", "--num-colors", type=int, default=5, help="Number of colors in palette")
 parser.add_argument("-s", "--max_size", nargs=2, required=False, default=[244, 244], help="Scale the image to this maximum size")
@@ -30,6 +31,10 @@ def get_top_colors(qimg, fname, model, num_colors):
 def get_moods(qimg, fname, model, num_moods):
     return qimg.top_moods(num_moods)
 
+def get_score(top_colors, model):
+    pal = Palette([c[0] for c in top_colors], model)
+    return pal.score_palette()
+
 def process_image(f, args, model):
     qimg = QImage(f, model=model, max_size=args.max_size)
     top_colors= get_top_colors(qimg, f, args.model, args.num_colors)
@@ -40,15 +45,24 @@ def process_image(f, args, model):
         res += ',' + ','.join([f"{m[0]},{m[1]}" for m in moods])
         for i in range(len(moods), args.moods):
             res += ",,"
-    if args.score is not None:
-        pal = Palette([c[0] for c in top_colors], model)
-        res += ',' + f"{pal.score_palette():.3f}"
+    if args.score:
+        res += ',' + f"{get_score(top_colors, model):.3f}"
+    return res
+
+def process_colorthief(f, args, model):
+    from colorthief import ColorThief
+    ct = ColorThief(f)
+    palette = ct.get_palette(color_count=args.num_colors)
+    qpalette = [model.from_rgb(*[c/255.0 for c in p]) for p in palette]
+    # res = f'"{f}"' + "," + f"{','.join([f'{c},{1/len(palette):.3f}' for c in palette])}"
+    res = ",".join(qpalette)
     return res
 
 if args.cache:
     mem = Memory(args.cache, verbose=0)
     get_top_colors = mem.cache(get_top_colors, ignore=['qimg']) # type: ignore
     get_moods = mem.cache(get_moods, ignore=['qimg']) # type: ignore
+    get_score = mem.cache(get_score) # type: ignore
 
 model = get_model(args.model)
 if args.header:
@@ -62,8 +76,11 @@ outfile = sys.stdout if args.outfile is None else open(args.outfile, "wt", encod
 with outfile:
     if args.jobs == 1:
         for f in args.images:
-            print(process_image(f, args, model), file=outfile)
+            if args.method == "colorthief":
+                print(process_colorthief(f, args, model), file=outfile)
+            else:   
+                print(process_image(f, args, model), file=outfile)
     else:
-        for res in Parallel(n_jobs=args.jobs, return_as="generator", batch_size=1, verbose=10)(delayed(process_image)(f, args, model) for f in args.images):
+        for res in Parallel(n_jobs=args.jobs, return_as="generator", batch_size=1, verbose=10)(delayed(process_image)(f, args, model) for f in args.images): # type: ignore
             print(res, file=outfile)
 
